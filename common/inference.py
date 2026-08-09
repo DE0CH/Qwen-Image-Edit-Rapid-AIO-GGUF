@@ -97,7 +97,11 @@ def _load_transformer(model_url: str, base_repo: str):
         print(f"[inference] ignoring {len(unexpected)} unexpected keys: {unexpected[:3]}")
 
     transformer.enable_layerwise_casting(
-        storage_dtype=torch.float8_e4m3fn, compute_dtype=torch.bfloat16
+        storage_dtype=torch.float8_e4m3fn,
+        compute_dtype=torch.bfloat16,
+        # the AIO stores *all* weights in FP8, including norm layers that the
+        # default pattern would skip (and then crash on Float x Float8 math)
+        skip_modules_pattern=(),
     )
     return transformer
 
