@@ -1,0 +1,7 @@
+__pycache__/
+*.pyc
+.venv/
+venv/
+deploy.log
+.DS_Store
+.gradio/

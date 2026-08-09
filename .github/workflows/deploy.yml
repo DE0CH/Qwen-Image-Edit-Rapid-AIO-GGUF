@@ -1,0 +1,111 @@
+name: Deploy
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+concurrency:
+  group: deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy-modal:
+    name: Deploy backend to Modal
+    runs-on: ubuntu-latest
+    env:
+      MODAL_TOKEN_ID: ${{ secrets.MODAL_TOKEN_ID }}
+      MODAL_TOKEN_SECRET: ${{ secrets.MODAL_TOKEN_SECRET }}
+      MODAL_AUTH_TOKEN: ${{ secrets.MODAL_AUTH_TOKEN }}
+      MODAL_GPU: ${{ vars.MODAL_GPU }}
+      GGUF_URL: ${{ vars.GGUF_URL }}
+      BASE_REPO: ${{ vars.BASE_REPO }}
+      LOW_VRAM: ${{ vars.LOW_VRAM }}
+      HF_TOKEN: ${{ secrets.HF_TOKEN }}
+    outputs:
+      endpoint_url: ${{ steps.deploy.outputs.endpoint_url }}
+    steps:
+      - name: Check Modal credentials
+        id: creds
+        run: |
+          if [ -z "$MODAL_TOKEN_ID" ] || [ -z "$MODAL_TOKEN_SECRET" ]; then
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::MODAL_TOKEN_ID / MODAL_TOKEN_SECRET secrets are not set - skipping Modal deploy. Add them in Settings -> Secrets and variables -> Actions."
+          else
+            echo "configured=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: actions/checkout@v4
+        if: steps.creds.outputs.configured == 'true'
+
+      - uses: actions/setup-python@v5
+        if: steps.creds.outputs.configured == 'true'
+        with:
+          python-version: "3.11"
+
+      - name: Install Modal CLI
+        if: steps.creds.outputs.configured == 'true'
+        run: pip install modal pillow
+
+      - name: Deploy to Modal
+        if: steps.creds.outputs.configured == 'true'
+        id: deploy
+        run: |
+          set -o pipefail
+          modal deploy modal_app.py 2>&1 | tee deploy.log
+          URL=$(grep -oE 'https://[A-Za-z0-9.-]+\.modal\.run' deploy.log | head -n1)
+          if [ -z "$URL" ]; then
+            echo "::error::Could not find the endpoint URL in modal deploy output"
+            exit 1
+          fi
+          echo "endpoint_url=$URL" >> "$GITHUB_OUTPUT"
+          echo "### Modal backend deployed" >> "$GITHUB_STEP_SUMMARY"
+          echo "Web UI + API: $URL" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Warm up model (first run downloads ~35 GB of weights)
+        if: steps.creds.outputs.configured == 'true'
+        run: modal run modal_app.py::warmup
+        timeout-minutes: 60
+
+  deploy-space:
+    name: Deploy front-end to Hugging Face Space
+    runs-on: ubuntu-latest
+    needs: deploy-modal
+    if: ${{ !cancelled() }}
+    env:
+      HF_TOKEN: ${{ secrets.HF_TOKEN }}
+      HF_SPACE_ID: ${{ vars.HF_SPACE_ID }}
+      MODAL_ENDPOINT_URL: ${{ needs.deploy-modal.outputs.endpoint_url || vars.MODAL_ENDPOINT_URL }}
+      MODAL_AUTH_TOKEN: ${{ secrets.MODAL_AUTH_TOKEN }}
+    steps:
+      - name: Check Hugging Face credentials
+        id: creds
+        run: |
+          if [ -z "$HF_TOKEN" ]; then
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::HF_TOKEN secret is not set - skipping Space deploy. Add it in Settings -> Secrets and variables -> Actions."
+          else
+            echo "configured=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: actions/checkout@v4
+        if: steps.creds.outputs.configured == 'true'
+
+      - uses: actions/setup-python@v5
+        if: steps.creds.outputs.configured == 'true'
+        with:
+          python-version: "3.11"
+
+      - name: Install huggingface_hub
+        if: steps.creds.outputs.configured == 'true'
+        run: pip install "huggingface_hub>=0.26.0"
+
+      - name: Deploy Space
+        if: steps.creds.outputs.configured == 'true'
+        run: |
+          python scripts/deploy_space.py | tee space.log
+          SPACE_URL=$(grep -oE 'https://huggingface.co/spaces/[^ ]+' space.log | head -n1)
+          if [ -n "$SPACE_URL" ]; then
+            echo "### Hugging Face Space deployed" >> "$GITHUB_STEP_SUMMARY"
+            echo "$SPACE_URL" >> "$GITHUB_STEP_SUMMARY"
+          fi

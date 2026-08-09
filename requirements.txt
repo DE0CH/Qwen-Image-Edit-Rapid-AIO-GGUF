@@ -1,0 +1,13 @@
+# Full requirements for running inference locally (or on a GPU / ZeroGPU Space).
+# The CPU-only Space front-end uses space/requirements.txt instead.
+torch>=2.5.0
+diffusers>=0.36.0
+transformers>=4.55.0
+accelerate>=1.2.0
+gguf>=0.13.0
+safetensors>=0.4.5
+sentencepiece
+gradio==5.50.0
+pillow>=10.0.0
+requests>=2.32.0
+huggingface_hub
