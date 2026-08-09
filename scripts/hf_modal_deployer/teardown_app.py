@@ -99,7 +99,7 @@ def teardown() -> None:
             continue
         app_id = field(app_row, "app_id", "id")
         name = field(app_row, "description", "name") or app_id
-        r = run(["modal", "app", "stop", str(app_id)])
+        r = run(["modal", "app", "stop", str(app_id), "--yes"])
         (stopped if r.returncode == 0 else failed).append(f"{name} ({app_id})")
         push_status("stopping-apps", apps_stopped=stopped, apps_failed=failed)
 
@@ -112,11 +112,11 @@ def teardown() -> None:
             volumes = []
         for vol in volumes:
             vname = field(vol, "name")
-            if vname == OWN_VOLUME:
-                r = run(["modal", "volume", "delete", vname, "--yes"])
-                (deleted if r.returncode == 0 else left).append(vname)
-            elif vname:
-                left.append(vname)
+            if not vname:
+                continue
+            # full decommission: all volumes here are re-downloadable HF caches
+            r = run(["modal", "volume", "delete", vname, "--yes"])
+            (deleted if r.returncode == 0 else left).append(vname)
 
     status = "done" if not failed else "done-with-failures"
     push_status(status, apps_stopped=stopped, apps_failed=failed,
