@@ -4,7 +4,7 @@ A web interface (in the style of the official
 [Qwen/Qwen-Image-Edit-2511 Space](https://huggingface.co/spaces/Qwen/Qwen-Image-Edit-2511))
 for [Phr00t/Qwen-Image-Edit-Rapid-AIO](https://huggingface.co/Phr00t/Qwen-Image-Edit-Rapid-AIO)
 — a Lightning-merged FP8 build of Qwen-Image-Edit-2511 that edits images in
-**~4 inference steps** with CFG 1.0. Default checkpoint: **v23 SFW**.
+**~4 inference steps** with CFG 1.0. Default checkpoint: **v23 NSFW**.
 
 Only the transformer is taken from the AIO checkpoint (loaded with
 `QwenImageTransformer2DModel.from_single_file`, FP8 storage with bf16 compute
@@ -75,7 +75,7 @@ generating.
 | `HF_SPACE_ID` | `<you>/qwen-image-edit-rapid` | Space name |
 | `SPACE_MODE` | `local` | `local` = ZeroGPU inference on the Space; `remote` = thin client for Modal |
 | `MODAL_GPU` | `L40S` | e.g. `A100-80GB`, `L4` (with `LOW_VRAM=1`) |
-| `MODEL_URL` | Phr00t AIO `v23 SFW` | HF blob URL of another checkpoint (.safetensors AIO or .gguf) |
+| `MODEL_URL` | Phr00t AIO `v23 NSFW` | HF blob URL of another checkpoint (.safetensors AIO or .gguf) |
 | `BASE_REPO` | `Qwen/Qwen-Image-Edit-2511` | base pipeline repo |
 | `LOW_VRAM` | *(unset)* | set to `1` to enable CPU offload on smaller GPUs (Modal) |
 | `MODAL_ENDPOINT_URL` | *(unset)* | backend URL for `SPACE_MODE=remote` |
@@ -108,7 +108,7 @@ MODAL_ENDPOINT_URL=https://…modal.run python app.py
 
 ## Notes
 
-- Default model file: `v23/Qwen-Rapid-AIO-SFW-v23.safetensors` (28.4 GB, FP8).
+- Default model file: `v23/Qwen-Rapid-AIO-NSFW-v23.safetensors` (28.4 GB, FP8).
   Phr00t's notes: v19 is best for edit consistency, v23 for prompt adherence;
   each version has SFW and NSFW variants. Switch with the `MODEL_URL` variable.
 - Rapid settings: **4–8 steps, True CFG 1.0**, no negative prompt needed.

@@ -21,7 +21,7 @@ import os
 
 DEFAULT_MODEL_URL = (
     "https://huggingface.co/Phr00t/Qwen-Image-Edit-Rapid-AIO"
-    "/blob/main/v23/Qwen-Rapid-AIO-SFW-v23.safetensors"
+    "/blob/main/v23/Qwen-Rapid-AIO-NSFW-v23.safetensors"
 )
 DEFAULT_BASE_REPO = "Qwen/Qwen-Image-Edit-2511"
 
