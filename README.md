@@ -41,6 +41,11 @@ base `Qwen/Qwen-Image-Edit-2511` repo. No ComfyUI needed.
 | `HF_TOKEN` | your write token |
 | `MODAL_AUTH_TOKEN` | *(optional)* any password — protects the backend API & Modal UI |
 
+When `MODAL_AUTH_TOKEN` is set, the API requires an
+`Authorization: Bearer <token>` header, and the Modal-hosted web UI asks for a
+login: username `user`, password = the token. The Space authenticates
+automatically via its `MODAL_AUTH_TOKEN` secret.
+
 ### 3. Run the workflow
 
 **Actions tab → Deploy → Run workflow** (it also runs automatically on every
