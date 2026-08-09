@@ -52,6 +52,7 @@ def main() -> None:
         repo_type="space",
         space_sdk="gradio",
         exist_ok=True,
+        private=os.environ.get("SPACE_PUBLIC", "") != "1",
     )
 
     with tempfile.TemporaryDirectory() as build_dir:
