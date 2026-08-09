@@ -96,6 +96,8 @@ def main() -> None:
         for key in ("GGUF_URL", "BASE_REPO"):
             if os.environ.get(key):
                 api.add_space_variable(space_id, key, os.environ[key])
+        # Authenticated HF downloads (faster, higher rate limits)
+        api.add_space_secret(space_id, "HF_TOKEN", token)
         api.request_space_hardware(space_id, ZERO_GPU_HARDWARE)
         print(f"Requested hardware: {ZERO_GPU_HARDWARE}")
     else:
