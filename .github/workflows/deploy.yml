@@ -68,14 +68,15 @@ jobs:
         timeout-minutes: 60
 
   deploy-space:
-    name: Deploy front-end to Hugging Face Space
+    name: Deploy standalone ZeroGPU Space to Hugging Face
     runs-on: ubuntu-latest
-    needs: deploy-modal
-    if: ${{ !cancelled() }}
     env:
       HF_TOKEN: ${{ secrets.HF_TOKEN }}
       HF_SPACE_ID: ${{ vars.HF_SPACE_ID }}
-      MODAL_ENDPOINT_URL: ${{ needs.deploy-modal.outputs.endpoint_url || vars.MODAL_ENDPOINT_URL }}
+      SPACE_MODE: ${{ vars.SPACE_MODE || 'local' }}
+      GGUF_URL: ${{ vars.GGUF_URL }}
+      BASE_REPO: ${{ vars.BASE_REPO }}
+      MODAL_ENDPOINT_URL: ${{ vars.MODAL_ENDPOINT_URL }}
       MODAL_AUTH_TOKEN: ${{ secrets.MODAL_AUTH_TOKEN }}
     steps:
       - name: Check Hugging Face credentials

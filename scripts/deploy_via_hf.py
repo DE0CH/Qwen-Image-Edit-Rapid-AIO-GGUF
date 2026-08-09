@@ -8,7 +8,6 @@ Environment variables:
   MODAL_TOKEN_ID      (required) ak-...
   MODAL_TOKEN_SECRET  (required) as-...
   MODAL_AUTH_TOKEN    (optional) protect the backend with a bearer token
-  HF_SPACE_ID         (optional) front-end Space id
   DEPLOYER_SPACE_ID   (optional) deployer Space id
   STATUS_REPO_ID      (optional) private dataset repo for status reporting
   MODAL_GPU / GGUF_URL / BASE_REPO / LOW_VRAM  (optional) backend config
@@ -34,7 +33,6 @@ def main() -> None:
     api = HfApi(token=hf_token)
     user = api.whoami()["name"]
     deployer_id = os.environ.get("DEPLOYER_SPACE_ID") or f"{user}/modal-deployer-qwen-edit"
-    frontend_id = os.environ.get("HF_SPACE_ID") or f"{user}/qwen-image-edit-rapid"
     status_repo = os.environ.get("STATUS_REPO_ID") or f"{user}/modal-deploy-status"
 
     api.create_repo(status_repo, repo_type="dataset", private=True, exist_ok=True)
@@ -47,7 +45,6 @@ def main() -> None:
     api.add_space_secret(deployer_id, "HF_TOKEN", hf_token)
     if os.environ.get("MODAL_AUTH_TOKEN"):
         api.add_space_secret(deployer_id, "MODAL_AUTH_TOKEN", os.environ["MODAL_AUTH_TOKEN"])
-    api.add_space_variable(deployer_id, "FRONTEND_SPACE_ID", frontend_id)
     api.add_space_variable(deployer_id, "STATUS_REPO_ID", status_repo)
     for key in ("MODAL_GPU", "GGUF_URL", "BASE_REPO", "LOW_VRAM"):
         if os.environ.get(key):

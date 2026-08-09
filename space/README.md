@@ -17,13 +17,13 @@ Web UI for [Phil2Sat/Qwen-Image-Edit-Rapid-AIO-GGUF](https://huggingface.co/Phil
 a Lightning-merged GGUF build of [Qwen/Qwen-Image-Edit-2511](https://huggingface.co/Qwen/Qwen-Image-Edit-2511)
 that edits images in ~4 inference steps.
 
-This Space is a lightweight front-end: inference runs on a [Modal](https://modal.com)
-GPU backend. Configure it in the Space settings:
+Inference runs directly on this Space via ZeroGPU: the GGUF transformer is
+loaded with diffusers' GGUF support and the text encoder/VAE come from the
+base Qwen/Qwen-Image-Edit-2511 repo.
 
-- **Variable `MODAL_ENDPOINT_URL`** (required): the Modal web endpoint URL,
-  e.g. `https://<workspace>--qwen-image-edit-rapid-web.modal.run`
-- **Secret `MODAL_AUTH_TOKEN`** (optional): bearer token if the backend was
-  deployed with authentication enabled
+Model overrides via Space variables: `GGUF_URL` (blob URL of another .gguf
+quant), `BASE_REPO`. If `MODAL_ENDPOINT_URL` is set instead, the app switches
+to thin-client mode and calls that backend rather than running locally.
 
-Deployment source and instructions:
+Deployment source:
 [DE0CH/Qwen-Image-Edit-Rapid-AIO-GGUF](https://github.com/DE0CH/Qwen-Image-Edit-Rapid-AIO-GGUF)

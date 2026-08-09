@@ -1,12 +1,13 @@
 """Deployer Space: deploys the Qwen Image Edit backend to Modal.
 
-Runs `modal deploy` + a warm-up generation every time this Space (re)starts,
-then stores the endpoint URL on the front-end Space. Progress is pushed to a
-private status dataset repo so it can be monitored from anywhere.
+Runs `modal deploy` + a warm-up generation every time this Space (re)starts.
+Progress is pushed to a private status dataset repo so it can be monitored
+from anywhere. The Modal deployment is fully standalone (it serves its own
+web UI and API).
 
 Space secrets:   MODAL_TOKEN_ID, MODAL_TOKEN_SECRET, HF_TOKEN,
                  MODAL_AUTH_TOKEN (optional)
-Space variables: FRONTEND_SPACE_ID, STATUS_REPO_ID,
+Space variables: STATUS_REPO_ID,
                  MODAL_GPU / GGUF_URL / BASE_REPO / LOW_VRAM (optional)
 """
 
@@ -23,7 +24,6 @@ from huggingface_hub import HfApi
 LOG_PATH = "/tmp/deploy.log"
 STATE = {"status": "starting", "endpoint_url": "", "error": ""}
 
-FRONTEND_SPACE_ID = os.environ.get("FRONTEND_SPACE_ID", "")
 STATUS_REPO_ID = os.environ.get("STATUS_REPO_ID", "")
 SELF_SPACE_ID = os.environ.get("SPACE_ID", "")
 
@@ -93,12 +93,6 @@ def run_deploy() -> None:
     if not run_step("warming_up", ["modal", "run", "modal_app.py::warmup"]):
         return
 
-    if FRONTEND_SPACE_ID:
-        try:
-            api.add_space_variable(FRONTEND_SPACE_ID, "MODAL_ENDPOINT_URL", url)
-        except Exception as e:
-            push_status("failed:frontend-var", error=f"could not set frontend variable: {e}")
-            return
     push_status("done", endpoint_url=url)
 
     if SELF_SPACE_ID:  # pause so HF restarts don't re-trigger deploys; restart manually to redeploy

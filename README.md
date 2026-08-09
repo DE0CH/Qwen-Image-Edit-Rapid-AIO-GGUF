@@ -11,14 +11,19 @@ with `diffusers` (`QwenImageTransformer2DModel.from_single_file` +
 `GGUFQuantizationConfig`) and pulls the text encoder / VAE / processor from the
 base `Qwen/Qwen-Image-Edit-2511` repo. No ComfyUI needed.
 
-## Architecture
+## Architecture — two independent deployments
 
-- **Modal** hosts the GPU backend (default: one L40S, scales to zero when idle)
-  and serves **both** a Gradio web UI and a JSON API at
+- **Modal** (complete: UI + inference): a GPU backend (default: one L40S,
+  scales to zero when idle) serving the Gradio web UI **and** a JSON API at
   `https://<workspace>--qwen-image-edit-rapid-web.modal.run`.
-- **Hugging Face Space** hosts the same Gradio UI as a lightweight front-end on
-  free CPU hardware, calling the Modal API for inference.
-- **GitHub Actions** deploys both — everything can be done from a phone browser.
+- **Hugging Face Space** (complete: UI + inference): the same Gradio app
+  running the model directly on the Space via **ZeroGPU** (requires PRO).
+  The Space can instead be deployed as a thin client for the Modal backend
+  (`SPACE_MODE=remote`).
+- **GitHub Actions** deploys both — everything can be done from a phone
+  browser. There is also `scripts/deploy_via_hf.py` for environments where
+  the Modal CLI cannot connect (it sets up a private "deployer" Space that
+  runs `modal deploy` from Hugging Face infrastructure).
 
 ## Deploy (works entirely from a phone)
 
@@ -66,11 +71,12 @@ generating.
 | Variable | Default | Purpose |
 |---|---|---|
 | `HF_SPACE_ID` | `<you>/qwen-image-edit-rapid` | Space name |
+| `SPACE_MODE` | `local` | `local` = ZeroGPU inference on the Space; `remote` = thin client for Modal |
 | `MODAL_GPU` | `L40S` | e.g. `A100-80GB`, `L4` (with `LOW_VRAM=1`) |
 | `GGUF_URL` | v9.0 `Q4_K_M` | HF blob URL of any other .gguf from the model repo |
 | `BASE_REPO` | `Qwen/Qwen-Image-Edit-2511` | base pipeline repo |
-| `LOW_VRAM` | *(unset)* | set to `1` to enable CPU offload on smaller GPUs |
-| `MODAL_ENDPOINT_URL` | *(from Modal deploy)* | manual backend URL override for the Space |
+| `LOW_VRAM` | *(unset)* | set to `1` to enable CPU offload on smaller GPUs (Modal) |
+| `MODAL_ENDPOINT_URL` | *(unset)* | backend URL for `SPACE_MODE=remote` |
 
 ## API
 
@@ -104,7 +110,3 @@ MODAL_ENDPOINT_URL=https://…modal.run python app.py
   latest version in the model repo (v9.0 only ships under that filename).
   Switch quants/versions with the `GGUF_URL` variable.
 - Rapid settings: **4–8 steps, True CFG 1.0**, no negative prompt needed.
-- Alternative to Modal: give the Space **ZeroGPU** hardware (PRO account),
-  remove the `MODAL_ENDPOINT_URL` variable, and replace the Space's
-  `requirements.txt` with the root one from this repo — `app.py` then runs
-  inference on the Space itself.

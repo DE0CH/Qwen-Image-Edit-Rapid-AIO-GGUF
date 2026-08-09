@@ -11,6 +11,11 @@ Two modes:
 
 import os
 
+try:  # ZeroGPU support — must be imported before torch
+    import spaces
+except ImportError:
+    spaces = None
+
 from common.ui import build_ui
 
 MODAL_ENDPOINT_URL = os.environ.get("MODAL_ENDPOINT_URL", "").strip().rstrip("/")
@@ -61,12 +66,8 @@ def make_local_edit_fn():
             num_images=num_images,
         )
 
-    try:  # ZeroGPU Spaces: allocate a GPU per call
-        import spaces
-
+    if spaces is not None:  # ZeroGPU Spaces: allocate a GPU per call
         edit_fn = spaces.GPU(duration=120)(edit_fn)
-    except ImportError:
-        pass
     return edit_fn
 
 
