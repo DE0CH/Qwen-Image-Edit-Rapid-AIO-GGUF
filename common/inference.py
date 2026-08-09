@@ -18,6 +18,7 @@ Configuration via environment variables:
 """
 
 import os
+import re
 
 DEFAULT_MODEL_URL = (
     "https://huggingface.co/Phr00t/Qwen-Image-Edit-Rapid-AIO"
@@ -28,6 +29,20 @@ DEFAULT_BASE_REPO = "Qwen/Qwen-Image-Edit-2511"
 MAX_IMAGES_IN = 3
 MAX_IMAGES_OUT = 4
 MAX_STEPS = 50
+
+
+_AIO_PREFIX = "model.diffusion_model."
+
+
+def _parse_hf_url(url: str):
+    """Split an hf.co blob/resolve URL into (repo_id, revision, filename)."""
+    m = re.match(
+        r"https?://huggingface\.co/([^/]+/[^/]+)/(?:blob|resolve)/([^/]+)/(.+?)(?:\?.*)?$",
+        url,
+    )
+    if not m:
+        raise ValueError(f"not a huggingface.co file URL: {url}")
+    return m.group(1), m.group(2), m.group(3)
 
 
 def _load_transformer(model_url: str, base_repo: str):
@@ -45,13 +60,42 @@ def _load_transformer(model_url: str, base_repo: str):
             torch_dtype=torch.bfloat16,
         )
 
-    # FP8 all-in-one safetensors: load the transformer keys keeping the
-    # checkpoint's FP8 storage dtype, and upcast per-layer at compute time.
-    transformer = QwenImageTransformer2DModel.from_single_file(
-        model_url,
-        config=base_repo,
-        subfolder="transformer",
-    )
+    # FP8 all-in-one safetensors (ComfyUI checkpoint layout). The transformer
+    # keys are diffusers-style names under a "model.diffusion_model." prefix,
+    # so load them directly: strip the prefix, skip marker keys, and assign
+    # keeping the checkpoint's FP8 storage dtype. diffusers' from_single_file
+    # mis-detects this multi-component file and leaves meta tensors behind.
+    from accelerate import init_empty_weights
+    from huggingface_hub import hf_hub_download
+    from safetensors import safe_open
+
+    repo_id, revision, filename = _parse_hf_url(model_url)
+    path = hf_hub_download(repo_id, filename, revision=revision)
+
+    config = QwenImageTransformer2DModel.load_config(base_repo, subfolder="transformer")
+    with init_empty_weights(include_buffers=False):
+        transformer = QwenImageTransformer2DModel.from_config(config)
+
+    state = {}
+    with safe_open(path, framework="pt", device="cpu") as f:
+        for key in f.keys():
+            if not key.startswith(_AIO_PREFIX):
+                continue
+            name = key[len(_AIO_PREFIX):]
+            if name.startswith("__"):  # marker keys like __index_timestep_zero__
+                continue
+            state[name] = f.get_tensor(key)
+
+    missing, unexpected = transformer.load_state_dict(state, strict=False, assign=True)
+    missing = [k for k in missing if not k.endswith("_extra_state")]
+    if missing:
+        raise RuntimeError(
+            f"AIO checkpoint is missing {len(missing)} transformer keys, "
+            f"e.g. {missing[:3]}"
+        )
+    if unexpected:
+        print(f"[inference] ignoring {len(unexpected)} unexpected keys: {unexpected[:3]}")
+
     transformer.enable_layerwise_casting(
         storage_dtype=torch.float8_e4m3fn, compute_dtype=torch.bfloat16
     )
