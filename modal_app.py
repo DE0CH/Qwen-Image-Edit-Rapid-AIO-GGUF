@@ -13,7 +13,8 @@ Serves (on one https://<workspace>--qwen-image-edit-rapid-web.modal.run URL):
 
 Deploy-time environment variables (all optional, baked in at deploy):
   MODAL_GPU        GPU type for inference (default L40S)
-  GGUF_URL         which .gguf file to serve (default v90 Q4_K_M)
+  MODEL_URL        which checkpoint to serve (.safetensors AIO or .gguf;
+                   default Phr00t Rapid AIO SFW v23)
   BASE_REPO        base diffusers repo (default Qwen/Qwen-Image-Edit-2511)
   LOW_VRAM         enable CPU offload (for smaller GPUs)
   HF_TOKEN         Hugging Face token for downloads (not usually needed)
@@ -37,7 +38,7 @@ hf_cache = modal.Volume.from_name(f"{APP_NAME}-hf-cache", create_if_missing=True
 # Deploy-time configuration forwarded into the containers.
 model_env = {
     k: v
-    for k in ("GGUF_URL", "BASE_REPO", "LOW_VRAM", "HF_TOKEN")
+    for k in ("MODEL_URL", "GGUF_URL", "BASE_REPO", "LOW_VRAM", "HF_TOKEN")
     if (v := os.environ.get(k))
 }
 model_secret = modal.Secret.from_dict(model_env)
@@ -75,6 +76,7 @@ app = modal.App(APP_NAME)
 @app.cls(
     image=gpu_image,
     gpu=GPU_TYPE,
+    memory=49152,  # FP8 AIO load peaks well above the default allocation
     volumes={CACHE_DIR: hf_cache},
     secrets=[model_secret],
     timeout=1800,

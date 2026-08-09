@@ -18,6 +18,7 @@ jobs:
       MODAL_TOKEN_SECRET: ${{ secrets.MODAL_TOKEN_SECRET }}
       MODAL_AUTH_TOKEN: ${{ secrets.MODAL_AUTH_TOKEN }}
       MODAL_GPU: ${{ vars.MODAL_GPU }}
+      MODEL_URL: ${{ vars.MODEL_URL }}
       GGUF_URL: ${{ vars.GGUF_URL }}
       BASE_REPO: ${{ vars.BASE_REPO }}
       LOW_VRAM: ${{ vars.LOW_VRAM }}
@@ -74,6 +75,7 @@ jobs:
       HF_TOKEN: ${{ secrets.HF_TOKEN }}
       HF_SPACE_ID: ${{ vars.HF_SPACE_ID }}
       SPACE_MODE: ${{ vars.SPACE_MODE || 'local' }}
+      MODEL_URL: ${{ vars.MODEL_URL }}
       GGUF_URL: ${{ vars.GGUF_URL }}
       BASE_REPO: ${{ vars.BASE_REPO }}
       MODAL_ENDPOINT_URL: ${{ vars.MODAL_ENDPOINT_URL }}

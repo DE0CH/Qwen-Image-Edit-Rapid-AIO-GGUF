@@ -93,7 +93,7 @@ def main() -> None:
                 api.delete_space_secret(space_id, secret)
             except Exception:
                 pass
-        for key in ("GGUF_URL", "BASE_REPO"):
+        for key in ("MODEL_URL", "GGUF_URL", "BASE_REPO"):
             if os.environ.get(key):
                 api.add_space_variable(space_id, key, os.environ[key])
         # Authenticated HF downloads (faster, higher rate limits)

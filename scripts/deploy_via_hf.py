@@ -46,7 +46,7 @@ def main() -> None:
     if os.environ.get("MODAL_AUTH_TOKEN"):
         api.add_space_secret(deployer_id, "MODAL_AUTH_TOKEN", os.environ["MODAL_AUTH_TOKEN"])
     api.add_space_variable(deployer_id, "STATUS_REPO_ID", status_repo)
-    for key in ("MODAL_GPU", "GGUF_URL", "BASE_REPO", "LOW_VRAM"):
+    for key in ("MODAL_GPU", "MODEL_URL", "GGUF_URL", "BASE_REPO", "LOW_VRAM"):
         if os.environ.get(key):
             api.add_space_variable(deployer_id, key, os.environ[key])
 

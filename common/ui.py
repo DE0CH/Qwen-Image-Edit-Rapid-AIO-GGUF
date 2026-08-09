@@ -25,7 +25,7 @@ input[type='text'], input[type='number'], textarea, select {
 
 DESCRIPTION = """
 Fast **4-step** image editing with
-[Qwen-Image-Edit-Rapid-AIO (GGUF)](https://huggingface.co/Phil2Sat/Qwen-Image-Edit-Rapid-AIO-GGUF)
+[Qwen-Image-Edit-Rapid-AIO](https://huggingface.co/Phr00t/Qwen-Image-Edit-Rapid-AIO)
 — a Lightning-merged build of
 [Qwen-Image-Edit-2511](https://huggingface.co/Qwen/Qwen-Image-Edit-2511).
 Upload 1–3 images, describe the edit, and hit **Edit**.
