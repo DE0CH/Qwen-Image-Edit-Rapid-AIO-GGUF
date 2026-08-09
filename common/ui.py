@@ -16,6 +16,13 @@ import gradio as gr
 MAX_SEED = 2**31 - 1
 MAX_IMAGES_IN = 3
 
+# iOS Safari zooms into a focused input when its font-size is below 16px.
+CSS = """
+input[type='text'], input[type='number'], textarea, select {
+    font-size: 16px !important;
+}
+"""
+
 DESCRIPTION = """
 Fast **4-step** image editing with
 [Qwen-Image-Edit-Rapid-AIO (GGUF)](https://huggingface.co/Phil2Sat/Qwen-Image-Edit-Rapid-AIO-GGUF)
@@ -69,7 +76,9 @@ def build_ui(edit_fn, subtitle: str = "") -> gr.Blocks:
             raise gr.Error(f"Generation failed: {e}")
         return outputs, seed
 
-    with gr.Blocks(title="Qwen Image Edit — Rapid AIO GGUF", theme=gr.themes.Soft()) as demo:
+    with gr.Blocks(
+        title="Qwen Image Edit — Rapid AIO GGUF", theme=gr.themes.Soft(), css=CSS
+    ) as demo:
         gr.Markdown("# 🖌️ Qwen Image Edit — Rapid AIO (GGUF)")
         gr.Markdown(DESCRIPTION + (f"\n\n{subtitle}" if subtitle else ""))
 
