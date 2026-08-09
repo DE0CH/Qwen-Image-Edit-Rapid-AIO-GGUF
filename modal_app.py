@@ -49,6 +49,7 @@ gpu_image = (
     modal.Image.debian_slim(python_version="3.11")
     .pip_install(
         "torch>=2.5.0",
+        "torchvision",
         "diffusers>=0.36.0",
         "transformers>=4.55.0",
         "accelerate>=1.2.0",
