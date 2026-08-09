@@ -96,11 +96,24 @@ def _load_transformer(model_url: str, base_repo: str):
     if unexpected:
         print(f"[inference] ignoring {len(unexpected)} unexpected keys: {unexpected[:3]}")
 
+    # Layerwise-casting hooks only attach to Linear/Conv layers; every other
+    # module (RMSNorm etc.) computes directly on its stored weights, and the
+    # AIO stores those in FP8 too — upcast them to bf16 (they are tiny).
+    import torch.nn as nn
+
+    hooked_types = (nn.Linear, nn.Conv1d, nn.Conv2d, nn.Conv3d)
+    for module in transformer.modules():
+        if isinstance(module, hooked_types):
+            continue
+        for param in module.parameters(recurse=False):
+            if param.dtype == torch.float8_e4m3fn:
+                param.data = param.data.to(torch.bfloat16)
+
     transformer.enable_layerwise_casting(
         storage_dtype=torch.float8_e4m3fn,
         compute_dtype=torch.bfloat16,
-        # the AIO stores *all* weights in FP8, including norm layers that the
-        # default pattern would skip (and then crash on Float x Float8 math)
+        # hook all Linear layers — the default pattern would exclude e.g.
+        # norm_out.linear, whose stored weight is FP8 as well
         skip_modules_pattern=(),
     )
     return transformer
